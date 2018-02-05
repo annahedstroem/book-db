@@ -1,8 +1,13 @@
 
 
+/* LAB 1 */
+
 /*  1. Generate a list of all countries that do not have any islands. */
 
-annaheds=> SELECT Name FROM Country WHERE Country.code NOT IN (SELECT geo_Island.Country FROM geo_Island);
+SELECT Name 
+FROM Country 
+WHERE Country.code 
+NOT IN (SELECT geo_Island.Country FROM geo_Island);
 
  El Salvador
  Honduras
