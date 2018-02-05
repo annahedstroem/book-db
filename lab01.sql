@@ -1,31 +1,67 @@
 
-
 /* LAB 1 */
 
-/*  1. Generate a list of all countries that do not have any islands. */
+/*  1. List all countries that do not have any islands. */
+
+/* INPUT: */
 
 SELECT Name 
 FROM Country 
 WHERE Country.code 
 NOT IN (SELECT geo_Island.Country FROM geo_Island);
 
- El Salvador
- Honduras
+/* ANSWER:
+
+           name           
+--------------------------
+ Albania
+ Macedon
  ...
- Uganda
- Lesotho
- Malawi
  Mozambique
  Swaziland
 (120 rows)
+*/
 
 /* 2. Generate the ratio between inland provinces (provinces not bordering any sea) to total
 number of provinces. */
+
+/* INPUT: */
+
+SELECT (1.0 *
+(SELECT COUNT(Province) 
+FROM (SELECT DISTINCT Province FROM geo_Sea) 
+AS temp) / 
+(SELECT COUNT (Country) 
+FROM Province))
+AS temp2;
+
+/* OUTPUT:
+
+         temp2          
+------------------------
+0.44375388440024860162
+(1 row)
+*/
+ 
 
 /* 3. Generate a table of all the continents and the sum of the areas of all those lakes that contain
 at least one island for each continent. If a lake is in a country that is situated on several
 continents, the appropriate share of the lake area should be counted for each of those
 continents. */
+
+/* INPUT: */
+
+SELECT * FROM COUNTRY;
+
+
+/* OUTPUT:
+
+         temp2          
+------------------------
+0.44375388440024860162
+(1 row)
+*/
+
 
 /*  4. Generate a table with the two continents that will have the largest and the smallest
 population increase fifty years from now given current population and growth rates, and the
