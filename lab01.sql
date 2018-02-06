@@ -386,20 +386,25 @@ WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%
 OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'   
 ),
 Rhein AS (
-SELECT sum(Rivers1.Length1) AS RheinLength FROM Rivers1
+SELECT SUM(Rivers1.Length1) AS RheinLength FROM Rivers1
 WHERE Rivers1.Name1 LIKE '%Rhein%' OR Rivers1.River1 LIKE'%Rhein%'
-)
+),
 Nile AS (
-SELECT sum(Rivers1.Length1) AS NileLength FROM Rivers1
+SELECT SUM(Rivers1.Length1) AS NileLength FROM Rivers1
 WHERE Rivers1.Name1 LIKE '%Nile%' OR Rivers1.River1 LIKE'%Nile%'
-)
+),
 Amazonas AS (
-SELECT sum(Rivers1.Length1) AS AmazonasLength FROM Rivers1
+SELECT SUM(Rivers1.Length1) AS AmazonasLength FROM Rivers1
 WHERE Rivers1.Name1 LIKE '%Amazonas%' OR Rivers1.River1 LIKE'%Amazonas%'
+),
+MaxTotal AS (
+SELECT MAX(Rivers1.Length1) AS MaxLength FROM Rivers1
+WHERE Rivers1.River1 LIKE '%Rhein%' 
 )
-SELECT * FROM Rhein;
+SELECT * FROM MaxTotal;
            
            
+OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'
 
            
            
