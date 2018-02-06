@@ -51,15 +51,31 @@ continents. */
 
 /* INPUT: */
 
-SELECT * FROM COUNTRY;
+SELECT list.cont, SUM(list.a*(list.per/100)) 
+FROM (SELECT DISTINCT ON (islandIn.Lake, cont) islandIn.Lake, 
+encompasses.continent AS cont,
+encompasses.percentage AS per, 
+Lake.Area AS a
+FROM islandIn 
+INNER JOIN geo_Lake on islandIn.Lake = geo_Lake.Lake
+INNER JOIN encompasses on encompasses.country = geo_Lake.country
+INNER JOIN Lake on islandIn.Lake =Lake.Name) 
+AS list GROUP BY list.cont;
+        
+
 
 
 /* OUTPUT:
 
-         temp2          
-------------------------
-0.44375388440024860162
-(1 row)
+       cont        |             sum             
+-------------------+-----------------------------
+ Europe            |   7875.50000000000000000000
+ Australia/Oceania |    242.66000000000000000000
+ Africa            |  68870.00000000000000000000
+ America           | 78907.700000000000000000000
+ Asia              | 24721.340000000000000000000
+(5 rows)
+
 */
 
 
