@@ -363,27 +363,12 @@ recursively.
 
 /* INPUT: */
 
-
-WITH Rivers1 AS (
-SELECT River.Name AS Name1, River.River AS River1, a.Length AS Length1 FROM River
-INNER JOIN River a ON River.Name = a.River
-WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%Amazonas%'
-OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'   
-),
-Rivers2 AS (
-SELECT SUM(Length1) AS TotalLength FROM Rivers1
-INNER JOIN River ON River.Name = River.River
-)
-SELECT * FROM Rivers2;
-           
-
-           
            
 WITH Rivers1 AS (
 SELECT River.Name AS Name1, River.River AS River1, a.Length AS Length1 FROM River
 INNER JOIN River a ON River.Name = a.River
 WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%Amazonas%'
-OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'   
+OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'
 ),
 Rhein AS (
 SELECT SUM(Rivers1.Length1) AS RheinLength FROM Rivers1
@@ -394,39 +379,27 @@ SELECT SUM(Rivers1.Length1) AS NileLength FROM Rivers1
 WHERE Rivers1.Name1 LIKE '%Nile%' OR Rivers1.River1 LIKE'%Nile%'
 ),
 Amazonas AS (
+
 SELECT SUM(Rivers1.Length1) AS AmazonasLength FROM Rivers1
 WHERE Rivers1.Name1 LIKE '%Amazonas%' OR Rivers1.River1 LIKE'%Amazonas%'
 ),
-MaxTotal AS (
-SELECT MAX(Rivers1.Length1) AS MaxLength FROM Rivers1
-WHERE Rivers1.River1 LIKE '%Rhein%' 
+RheinMax AS (
+SELECT MAX(Rivers1.Length1) AS RheinMaxLength FROM Rivers1
+WHERE Rivers1.River1 LIKE '%Rhein%'
+),
+NileMax AS (
+SELECT MAX(Rivers1.Length1) AS NileMaxLength FROM Rivers1
+WHERE Rivers1.River1 LIKE '%Nile%'
+),
+AmazonasMax AS (
+SELECT MAX(Rivers1.Length1) AS AmazonasMaxLength FROM Rivers1
+WHERE Rivers1.River1 LIKE '%Amazonas%'
 )
-SELECT * FROM MaxTotal;
-           
-           
-OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'
+SELECT Rhein.RheinLength, RheinMax.RheinMaxLength, Nile.NileLength,
+NileMax.NileMaxLength, Amazonas.AmazonasLength, AmazonasMax.AmazonasMaxLength
+FROM Rhein, RheinMax, Nile, NileMax, Amazonas, AmazonasMax;
 
-           
-           
-           
-           
-           
-           
-           
-Select River.Name,River.River, Sum(River.Length) AS Length A
-From River
-/*Group By River.Name, River.River*/
-WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%Amazonas%'
-OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%';
-           
-SELECT River.Name AS Name1, River.River AS River1, a.Length AS Length1 FROM River
-INNER JOIN River a ON River.Name = a.River
-WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%Amazonas%'
-OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'  
-           
-           
-           
-           
+
            
 /* OUTPUT
            
@@ -461,6 +434,12 @@ OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%
  Victoria Nile |            |    480
 (27 rows)
 
+ rheinlength | rheinmaxlength | nilelength | nilemaxlength | amazonaslength | amazonasmaxlength 
+-------------+----------------+------------+---------------+----------------+-------------------
+      4049.3 |            227 |       5219 |           740 |          27502 |              1931
+(1 row)
 
+
+           
 */
 
