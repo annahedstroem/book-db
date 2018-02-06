@@ -365,25 +365,64 @@ recursively.
 
 
 WITH Rivers1 AS (
-SELECT River.Name, River.River, River.Length FROM River
-WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%Amazonas%'
-OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'      
-           
-),
-  Rivers2 AS (
-SELECT River.Length AS TotalLength
-             FROM Rivers1 INNER JOIN River ON River.Name = River.River
-)
-SELECT * FROM Rivers2;
-            
-           
-
-SELECT River.Name, River.River, a.Length AS Length1 FROM River
+SELECT River.Name AS Name1, River.River AS River1, a.Length AS Length1 FROM River
 INNER JOIN River a ON River.Name = a.River
 WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%Amazonas%'
 OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'   
+),
+Rivers2 AS (
+SELECT SUM(Length1) AS TotalLength FROM Rivers1
+INNER JOIN River ON River.Name = River.River
+)
+SELECT * FROM Rivers2;
+           
 
-SELECT * FROM River;
+           
+           
+WITH Rivers1 AS (
+SELECT River.Name AS Name1, River.River AS River1, a.Length AS Length1 FROM River
+INNER JOIN River a ON River.Name = a.River
+WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%Amazonas%'
+OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'   
+),
+Rhein AS (
+SELECT sum(Rivers1.Length1) AS RheinLength FROM Rivers1
+WHERE Rivers1.Name1 LIKE '%Rhein%' OR Rivers1.River1 LIKE'%Rhein%'
+)
+Nile AS (
+SELECT sum(Rivers1.Length1) AS NileLength FROM Rivers1
+WHERE Rivers1.Name1 LIKE '%Nile%' OR Rivers1.River1 LIKE'%Nile%'
+)
+Amazonas AS (
+SELECT sum(Rivers1.Length1) AS AmazonasLength FROM Rivers1
+WHERE Rivers1.Name1 LIKE '%Amazonas%' OR Rivers1.River1 LIKE'%Amazonas%'
+)
+SELECT * FROM Rhein;
+           
+           
+
+           
+           
+           
+           
+           
+           
+           
+Select River.Name,River.River, Sum(River.Length) AS Length A
+From River
+/*Group By River.Name, River.River*/
+WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%Amazonas%'
+OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%';
+           
+SELECT River.Name AS Name1, River.River AS River1, a.Length AS Length1 FROM River
+INNER JOIN River a ON River.Name = a.River
+WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%Amazonas%'
+OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'  
+           
+           
+           
+           
+           
 /* OUTPUT
            
       name      |   river    | length 
