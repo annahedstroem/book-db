@@ -53,17 +53,14 @@ continents. */
 
 SELECT list.cont, SUM(list.a*(list.per/100)) 
 FROM (SELECT DISTINCT ON (islandIn.Lake, cont) islandIn.Lake, 
-encompasses.continent AS cont,
-encompasses.percentage AS per, 
+Encompasses.Continent AS cont,
+Encompasses.Percentage AS per, 
 Lake.Area AS a
 FROM islandIn 
 INNER JOIN geo_Lake on islandIn.Lake = geo_Lake.Lake
-INNER JOIN encompasses on encompasses.country = geo_Lake.country
+INNER JOIN Encompasses on Encompasses.Country = geo_Lake.Country
 INNER JOIN Lake on islandIn.Lake =Lake.Name) 
 AS list GROUP BY list.cont;
-        
-
-
 
 /* OUTPUT:
 
@@ -83,16 +80,231 @@ AS list GROUP BY list.cont;
 population increase fifty years from now given current population and growth rates, and the
 future population to current population ratios for these two continents. */
 
+
+/* INPUT: */
+
+WITH join1 AS (
+  SELECT encompasses.Country, encompasses.Continent, country.Population * (encompasses.percentage * 0.01) AS Population 
+  FROM Country INNER JOIN encompasses ON country.Code = encompasses.Country
+),
+
+/*
+ country |     continent     |  population   
+---------+-------------------+---------------
+ AL      | Europe            |    2800138.00
+ GR      | Europe            |   10816286.00
+ MK      | Europe            |    2059794.00
+ SRB     | Europe            |    7120666.00
+ */
+ 
+join2 AS (
+  SELECT join1.*, population.population_growth
+  FROM population INNER JOIN join1 ON population.country = join1.country
+),
+
+/* 
+ country |     continent     |  population   | population_growth 
+---------+-------------------+---------------+-------------------
+ AL      | Europe            |    2800138.00 |               0.3
+ GR      | Europe            |   10816286.00 |              0.01
+ MK      | Europe            |    2059794.00 |              0.21
+ SRB     | Europe            |    7120666.00 |             -0.46
+ 
+ */
+PopCalc AS (
+  SELECT continent,
+    sum(population) AS current_population, 
+    sum(population*(POWER(1.00+population_growth/100,50))) AS future_population
+  FROM join2
+  GROUP BY continent  
+),
+
+/*
+     continent     | current_population |           future_population           
+-------------------+--------------------+---------------------------------------
+ Australia/Oceania |        93151310.76 |  158711474.27225660741511658172521100
+ Africa            |     1044073424.569 |    3492745461.72707148338986156295590
+ Asia              |     4243769599.495 |    7365013882.31065589997475895615902
+ America           |       955818870.00 | 1525487952.57949566247800638219411400
+ Europe            |      634961821.176 |  695907043.69196035745450384914671000
+(5 rows)
+*/
+
+RatioCalc AS (
+  SELECT *, 
+    future_population - current_population AS population_increase,
+    future_population / current_population AS ratio
+  FROM PopCalc
+),
+/*
+     continent     | current_population |           future_population           |         population_increase          |            ratio             
+-------------------+--------------------+---------------------------------------+--------------------------------------+------------------------------
+ Australia/Oceania |        93151310.76 |  158711474.27225660741511658172521100 |  65560163.51225660741511658172521100 | 1.70380290923838211608560495
+ Africa            |     1044073424.569 |    3492745461.72707148338986156295590 |   2448672037.15807148338986156295590 |    3.34530635445385320688482
+ Asia              |     4243769599.495 |    7365013882.31065589997475895615902 |   3121244282.81565589997475895615902 |    1.73548862859733894540750
+ America           |       955818870.00 | 1525487952.57949566247800638219411400 | 569669082.57949566247800638219411400 | 1.59600108394961449388209545
+ Europe            |      634961821.176 |  695907043.69196035745450384914671000 |  60945222.51596035745450384914671000 | 1.09598249923607208123613335
+(5 rows)
+*/
+
+MaxMin AS (
+  SELECT continent, ratio
+  FROM RatioCalc
+  WHERE 
+    population_increase = (SELECT MAX(population_increase) FROM RatioCalc) OR
+    population_increase = (SELECT MIN(population_increase) FROM RatioCalc)
+)
+SELECT * FROM MaxMin;
+
+/* OUTPUT:
+
+ continent |            ratio             
+-----------+------------------------------
+ Asia      |    1.73548862859733894540750
+ Europe    | 1.09598249923607208123613335
+(2 rows)
+
+
+*/
+
 /* 5. Generate the name of the organisation that is headquartered in Europe, has International in
 its name and has the largest number of European member countries. */
 
+/* INPUT: */
+
+WITH eu_countries AS(
+  SELECT encompasses.country FROM encompasses
+  WHERE encompasses.continent = 'Europe'
+),
+
+/*
+country 
+---------
+ AL
+ GR
+ MK
+ SRB
+ MNE
+*/
+
+EuOrg AS (
+  SELECT eu_countries.Country , Organization.Name, Organization.abbreviation FROM Organization
+  INNER JOIN eu_countries ON Organization.Country = eu_countries.Country
+  WHERE Organization.Name LIKE '%International%'
+),
+
+/*
+ country |                               name                               | abbreviation 
+---------+------------------------------------------------------------------+--------------
+ CH      | Bank for International Settlements                               | BIS
+ A       | International Atomic Energy Agency                               | IAEA
+ F       | International Chamber of Commerce                                | ICC
+ NL      | International Court of Justice                                   | ICJ
+ NL      | International Criminal Court                                     | ICCt
+ F       | International Criminal Police Organization                       | Interpol
+ F       | International Energy Agency                                      | IEA
+ CH      | International Federation of Red Cross and Red Crescent Societies | IFRCS
+ I       | International Fund for Agricultural Development                  | IFAD
+ CH      | International Labor Organization                                 | ILO
+ GB      | International Maritime Organization                              | IMO
+ GB      | International Mobile Satellite Organization                      | IMSO
+ CH      | International Olympic Committee                                  | IOC
+ CH      | International Organization for Migration                         | IOM
+ CH      | International Organization for Standardization                   | ISO
+ F       | International Organization of the French-speaking World          | OIF
+ CH      | International Telecommunication Union                            | ITU
+ B       | International Trade Union Confederation                          | ITUC
+(18 rows)
+
+*/
+Member_countries AS (
+  SELECT EuOrg.Name FROM isMember
+  INNER JOIN EuOrg ON isMember.Organization = EuOrg.abbreviation
+  WHERE isMember.Country IN (SELECT Country FROM eu_countries)
+),
+
+/*
+                              name                               
+------------------------------------------------------------------
+ Bank for International Settlements
+ Bank for International Settlements
+ Bank for International Settlements
+ Bank for Inte...
+ ..International Trade Union Confederation
+ International Trade Union Confederation
+(662 rows)
+ */
+ 
+Member_count AS (
+  SELECT DISTINCT Member_countries.Name, count(Member_countries) AS medlemmar
+  FROM Member_countries
+  GROUP BY Member_countries.Name
+)
+SELECT Name FROM Member_count
+WHERE medlemmar = (SELECT max(medlemmar) FROM member_count);
+
+/* OUTPUT:
+                    name                    
+--------------------------------------------
+ International Criminal Police Organization
+(1 row)
+*/
+
 /* 6. Generate a table of city names and related airport names for all the cities that have at least
 100,000 inhabitants, are situated in America and where the airport is elevated above 500 m. */
+
+/* INPUT: */
+
+WITH AllcitiesAmerica AS(
+  SELECT City.Name, City.Population FROM City 
+  INNER JOIN encompasses ON City.Country = encompasses.country
+  WHERE encompasses.continent = 'America' AND City.population >= 1000000
+),
+All_airports AS (
+  SELECT AllcitiesAmerica.Name , Airport.Name FROM Airport 
+    INNER JOIN AllcitiesAmerica ON Airport.City = AllcitiesAmerica.Name 
+    WHERE Airport.Elevation >= 500
+)
+SELECT * FROM All_airports;       
+
+/* OUTPUT
+ 
+
+*/
 
 /* 7. Generate a table of countries and the ratio between their latest reported and earliest
 reported population figures, rounded to one decimal point, for those countries where this ratio
 is above 10, that is to say those that have grown at least 10-fold between earliest and latest
 population count. */
+
+/* INPUT: */
+
+/* OUTPUT
+         name         | ratio 
+----------------------+-------
+ Andorra              |  12.6
+ Gibraltar            |  17.9
+ Bahrain              |  13.7
+ Hong Kong            |  25.0
+ Jordan               |  13.9
+ Kuwait               |  19.6
+ United Arab Emirates | 121.3
+ Philippines          |  61.5
+ Qatar                |  68.0
+ Cayman Islands       |  59.7
+ Costa Rica           |  39.6
+ Panama               |  10.1
+ El Salvador          |  42.9
+ Sint Maarten         |  25.0
+ Australia            |  10.3
+ Uruguay              |  24.9
+ Botswana             |  16.9
+ South Africa         |  10.0
+ Djibouti             |  13.5
+(19 rows)
+
+
+*/
 
 /* 8. Generate a table with the three (3) cities above 5,000,000 inhabitants that form the largest
 triangle between them, measured as the total length of all three triangle legs, and that total
@@ -108,8 +320,23 @@ and will not be admitted. Your solution is allowed to contain duplicate rows of 
 cities. Hint 1: Filter out the cities matching the condition first! Hint 2: Solve the simpler
 problem of calculating the two cities furthest apart under the above conditions first. */
 
+/* INPUT: */
+
+/* OUTPUT
+ 
+
+*/
+
 /* 9. Generate a table that contains the rivers Rhein, Nile and Amazonas, and the longest total
 length that the river systems feeding into each of them contain (including their own
 respective length). You must calculate the respective river systems of tributary rivers
 recursively. 
 */
+
+/* INPUT: */
+
+/* OUTPUT
+ 
+
+*/
+
