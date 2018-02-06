@@ -322,6 +322,34 @@ problem of calculating the two cities furthest apart under the above conditions 
 
 /* INPUT: */
 
+
+WITH Citys5M AS(
+  SELECT a.Name AS Name1, a.Population AS Pop1, a.Latitude AS Lat1, a.Longitude AS Long1,
+         b.Name AS Name2, b.Population AS Pop2, b.Latitude AS Lat2, b.Longitude AS Long2
+  FROM City a, City b
+  WHERE  a.Population > 5000000 AND b.Population > 5000000
+),
+Mercator1 AS (
+  SELECT radians(Lat1) AS Latitude1, radians(Lat2) AS Latitude2, ((Lat2)-(Lat1)) AS DeltaLat, radians(Citys5M.Long2-Citys5M.Long1) AS DeltaLong
+  FROM Citys5M
+),
+Mercator2 AS (
+  SELECT LOG(ABS(TAN(PI()/4.0) + (Latitude2/2.0)) / ABS(TAN((PI()/4.0) + (Latitude1/2.0)))) AS X
+  FROM Citys5M, Mercator1
+),
+Mercator3 AS (
+  SELECT (DeltaLat/X) AS q
+  FROM Mercator1, Mercator2, Citys5M
+)
+SELECT q FROM Mercator3;
+Mercator4 AS (
+  SELECT Name1.Citys5M AS FirstCity, Name2.Citys5M AS SecondCity, (SQRT((POWER(DeltaLat.Mercator2, 2)) + (POWER(q.Mercator3, 2)) + (POWER((DeltaLong.Mercator2, 2))) * 6371) AS d
+  FROM Meracator3
+)
+SELECT d FROM Mercator4;
+      
+     
+
 /* OUTPUT
  
 
@@ -335,8 +363,60 @@ recursively.
 
 /* INPUT: */
 
+
+WITH Rivers1 AS (
+SELECT River.Name, River.River, River.Length FROM River
+WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%Amazonas%'
+OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'      
+           
+),
+  Rivers2 AS (
+SELECT River.Length AS TotalLength
+             FROM Rivers1 INNER JOIN River ON River.Name = River.River
+)
+SELECT * FROM Rivers2;
+            
+           
+
+SELECT River.Name, River.River, a.Length AS Length1 FROM River
+INNER JOIN River a ON River.Name = a.River
+WHERE River.Name LIKE '%Rhein%' OR River.Name LIKE'%Nile%' OR River.Name LIKE '%Amazonas%'
+OR River.River LIKE '%Rhein%' OR River.River LIKE'%Nile%' OR River.River LIKE '%Amazonas%'   
+
+SELECT * FROM River;
 /* OUTPUT
- 
+           
+      name      |   river    | length 
+---------------+------------+--------
+ Rhein         |            |   1324
+ Lippe         | Rhein      |    220
+ Ruhr          | Rhein      |    219
+ Lahn          | Rhein      |    246
+ Main          | Rhein      |    524
+ Mosel         | Rhein      |    544
+ Neckar        | Rhein      |    367
+ Ill           | Rhein      |    217
+ Aare          | Rhein      |    288
+ Hinterrhein   | Rhein      |     72
+ Maas          | Rhein      |    925
+ Amazonas      |            |   3778
+ Rio Negro     | Amazonas   |   2866
+ Japura        | Amazonas   |   2816
+ Rio Putumayo  | Amazonas   |   1813
+ Maranon       | Amazonas   |   1905
+ Ucayali       | Amazonas   |   1600
+ Jurua         | Amazonas   |   3283
+ Purus         | Amazonas   |   3210
+ Rio Madeira   | Amazonas   |   1450
+ Xingu         | Amazonas   |   1980
+ Nile          |            |   3090
+ Atbara        | Nile       |   1120
+ Blue Nile     | Nile       |   1783
+ White Nile    | Nile       |    950
+ Sobat         | White Nile |    740
+ Victoria Nile |            |    480
+(27 rows)
+
 
 */
 
