@@ -27,22 +27,22 @@ number of provinces. */
 
 /* INPUT: */
 
-SELECT (1.0 *
-(SELECT COUNT(Province) 
-FROM (SELECT DISTINCT Province FROM geo_Sea) 
-AS temp) / 
-(SELECT COUNT (Country) 
-FROM Province))
-AS temp2;
+SELECT 1.0*Inland.NumberofProvinces/All.NumberofProvinces as ratio 
+FROM (
+SELECT COUNT(*) AS NumberofProvinces FROM Province 
+WHERE Province.Name NOT IN (SELECT geo_sea.Province from geo_sea)) Inland,
+(SELECT COUNT(*) AS NumberofProvinces FROM Provice) All;
+
 
 /* OUTPUT:
 
-         temp2          
+         ratio          
 ------------------------
-0.44375388440024860162
+ 0.54630205096333126165
 (1 row)
+
 */
- 
+
 
 /* 3. Generate a table of all the continents and the sum of the areas of all those lakes that contain
 at least one island for each continent. If a lake is in a country that is situated on several
@@ -59,7 +59,7 @@ Lake.Area AS a
 FROM islandIn 
 INNER JOIN geo_Lake on islandIn.Lake = geo_Lake.Lake
 INNER JOIN Encompasses on Encompasses.Country = geo_Lake.Country
-INNER JOIN Lake on islandIn.Lake =Lake.Name) 
+INNER JOIN Lake on islandIn.Lake =Lake.Name)
 AS list GROUP BY list.cont;
 
 /* OUTPUT:
@@ -279,6 +279,31 @@ population count. */
 
 /* INPUT: */
 
+WITH OldestReport AS(
+SELECT DISTINCT ON (CountryPops) CountryPops.Country, CountryPops.Population, t.mx
+FROM (
+    SELECT Country, MIN(Year) AS mx
+    FROM CountryPops
+    GROUP BY Country
+  ) t INNER JOIN CountryPops ON CountryPops.Country = t.Country AND t.mx = CountryPops.Year
+),
+join1 AS (
+  SELECT Country.Name, Country.Population, OldestReport.Population AS Olddata FROM Country
+  INNER JOIN OldestReport ON OldestReport.Country = Country.Code
+),
+Calc AS (
+  SELECT join1.Name, Join1.Population / join1.Olddata AS Ratio1 FROM join1
+),
+Structure AS (
+  SELECT Calc.Name, ROUND(Ratio1,1) AS Rounded_Ratio FROM CALC
+),
+Final AS (
+SELECT Structure.Name, Structure.Rounded_Ratio AS Ratio FROM Structure
+WHERE Structure.Rounded_Ratio >= 10
+)
+SELECT * FROM Final;        
+
+
 /* OUTPUT
          name         | ratio 
 ----------------------+-------
@@ -363,6 +388,19 @@ recursively.
 
 /* INPUT: */
 
+KLAR:
+           
+           WITH RECURSIVE funktion AS (
+  SELECT River.Name as base, river.Name, River.Length FROM river
+  WHERE River.Name = 'Amazonas' OR River.Name = 'Nile' OR River.Name = 'Rhein'
+  UNION ALL
+  SELECT upstream.base, River.Name, River.Length + upstream.length FROM river
+  INNER JOIN funktion AS upstream ON upstream.Name = River.River
+)
+SELECT funktion.base, MAX(funktion.length) FROM funktion GROUP BY funktion.base;
+           
+           INTE KLAR:
+           
            
 WITH Rivers1 AS (
 SELECT River.Name AS Name1, River.River AS River1, a.Length AS Length1 FROM River
