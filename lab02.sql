@@ -1,7 +1,6 @@
 
 from tkinter import *
 import pprint
-#import pandas as pd
 import time
 from tkinter import messagebox
 import datetime
