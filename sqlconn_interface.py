@@ -11,7 +11,7 @@ from psycopg2 import sql
 from datetime import *
 import psycopg2.extensions
 
-conn = psycopg2.connect("host=localhost dbname=room_booking")
+conn = psycopg2.connect("host=localhost dbname=db")
 cur = conn.cursor()
 
 class Connect_Database():
@@ -537,7 +537,7 @@ def main():
     conn.close()
 
 if __name__ == "__main__":
-    db = Connect_Database("localhost", "room_booking", "annahedstrom", "")
+    db = Connect_Database("localhost", "db", "name", "pw")
     main()
 
 
